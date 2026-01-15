@@ -12,12 +12,13 @@ class Particle {
     if (handX !== null && handY !== null) {
       let target = createVector(handX, handY);
       let force = p5.Vector.sub(target, this.pos);
-      force.setMag(0.3);
-      this.vel.add(force);
+
+      // FAST RESPONSE
+      force.setMag(2.5);
+      this.vel.lerp(force, 0.5);
     }
 
     this.pos.add(this.vel);
-    this.vel.limit(3);
   }
 
   show() {
@@ -30,7 +31,8 @@ class Particle {
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  for (let i = 0; i < 300; i++) {
+  // LOWER PARTICLE COUNT = FASTER
+  for (let i = 0; i < 150; i++) {
     particles.push(new Particle());
   }
 
@@ -43,15 +45,15 @@ function setup() {
 
   hands.setOptions({
     maxNumHands: 1,
-    modelComplexity: 1,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7,
+    modelComplexity: 0, // VERY IMPORTANT (speed)
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6,
   });
 
   hands.onResults((results) => {
     if (results.multiHandLandmarks.length > 0) {
-      let indexFinger = results.multiHandLandmarks[0][8];
-
+      // INDEX FINGER TIP
+      const indexFinger = results.multiHandLandmarks[0][8];
       handX = indexFinger.x * width;
       handY = indexFinger.y * height;
     } else {
@@ -72,10 +74,14 @@ function setup() {
 }
 
 function draw() {
-  background(0, 40);
+  background(0); // no motion blur = faster
 
   for (let p of particles) {
     p.update();
     p.show();
   }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
