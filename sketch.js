@@ -1,38 +1,33 @@
 let particles = [];
-let handX = null;
-let handY = null;
+let handX = 0;
+let handY = 0;
+let handDetected = false;
 
 class Particle {
   constructor() {
     this.pos = createVector(random(width), random(height));
-    this.vel = p5.Vector.random2D();
   }
 
   update() {
-    if (handX !== null && handY !== null) {
-      let target = createVector(handX, handY);
-      let force = p5.Vector.sub(target, this.pos);
-
-      // FAST RESPONSE
-      force.setMag(2.5);
-      this.vel.lerp(force, 0.5);
+    if (handDetected) {
+      // SNAP DIRECTLY TO HAND DIRECTION
+      this.pos.x += (handX - this.pos.x) * 0.35;
+      this.pos.y += (handY - this.pos.y) * 0.35;
     }
-
-    this.pos.add(this.vel);
   }
 
   show() {
     noStroke();
-    fill(0, 200, 255);
-    circle(this.pos.x, this.pos.y, 4);
+    fill(0, 255, 255);
+    circle(this.pos.x, this.pos.y, 3);
   }
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  // LOWER PARTICLE COUNT = FASTER
-  for (let i = 0; i < 150; i++) {
+  // VERY LOW CPU COST
+  for (let i = 0; i < 200; i++) {
     particles.push(new Particle());
   }
 
@@ -45,20 +40,19 @@ function setup() {
 
   hands.setOptions({
     maxNumHands: 1,
-    modelComplexity: 0, // VERY IMPORTANT (speed)
-    minDetectionConfidence: 0.6,
-    minTrackingConfidence: 0.6,
+    modelComplexity: 0, // FASTEST
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5,
   });
 
   hands.onResults((results) => {
     if (results.multiHandLandmarks.length > 0) {
-      // INDEX FINGER TIP
-      const indexFinger = results.multiHandLandmarks[0][8];
-      handX = indexFinger.x * width;
-      handY = indexFinger.y * height;
+      const index = results.multiHandLandmarks[0][8];
+      handX = index.x * width;
+      handY = index.y * height;
+      handDetected = true;
     } else {
-      handX = null;
-      handY = null;
+      handDetected = false;
     }
   });
 
@@ -74,8 +68,7 @@ function setup() {
 }
 
 function draw() {
-  background(0); // no motion blur = faster
-
+  background(0);
   for (let p of particles) {
     p.update();
     p.show();
